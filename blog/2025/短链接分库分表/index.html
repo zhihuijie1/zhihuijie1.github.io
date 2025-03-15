@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"> <html><body> <h1 id="短链接分库分表">短链接分库分表</h1> <h2 id="applicationyaml">application.yaml</h2> <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">server</span><span class="pi">:</span>
+  <span class="na">port</span><span class="pi">:</span> <span class="m">8001</span>
+
+<span class="na">spring</span><span class="pi">:</span>
+  <span class="na">datasource</span><span class="pi">:</span>
+    <span class="na">driver-class-name</span><span class="pi">:</span> <span class="s">org.apache.shardingsphere.driver.ShardingSphereDriver</span>
+    <span class="na">url</span><span class="pi">:</span> <span class="s">jdbc:shardingsphere:classpath:shardingsphere-config.yaml</span>
+  <span class="na">data</span><span class="pi">:</span>
+    <span class="na">redis</span><span class="pi">:</span>
+      <span class="na">host</span><span class="pi">:</span> <span class="s">118.31.71.211</span>
+      <span class="na">port</span><span class="pi">:</span> <span class="m">6379</span>
+      <span class="na">password</span><span class="pi">:</span> <span class="s">171612cgj</span>
+</code></pre></div></div> <h2 id="shardingsphere-configyaml"><code class="language-plaintext highlighter-rouge">shardingsphere-config.yaml</code></h2> <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">dataSources</span><span class="pi">:</span>
+  <span class="na">ds_0</span><span class="pi">:</span>
+    <span class="na">dataSourceClassName</span><span class="pi">:</span> <span class="s">com.zaxxer.hikari.HikariDataSource</span>
+    <span class="na">driverClassName</span><span class="pi">:</span> <span class="s">com.mysql.cj.jdbc.Driver</span>
+    <span class="na">jdbcUrl</span><span class="pi">:</span> <span class="s">jdbc:mysql://118.31.71.211:3306/link?useUnicode=true&amp;characterEncoding=UTF-8&amp;rewriteBatchedStatements=true&amp;allowMultiQueries=true&amp;serverTimezone=Asia/Shanghai</span>
+    <span class="na">username</span><span class="pi">:</span> <span class="s">chenguangjie</span>
+    <span class="na">password</span><span class="pi">:</span> <span class="s">171612cgjA</span>
+
+<span class="c1"># 分片规则配置</span>
+<span class="na">rules</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="kt">!SHARDING</span>
+    <span class="na">tables</span><span class="pi">:</span>
+      <span class="c1"># 目标分片表名称</span>
+      <span class="na">t_link</span><span class="pi">:</span>
+        <span class="c1"># 真实表节点表达式，创建16个分表（t_user_0到t_user_15）</span>
+        <span class="na">actualDataNodes</span><span class="pi">:</span> <span class="s">ds_0.t_link_${0..15}</span>
+        <span class="c1"># 分表策略</span>
+        <span class="na">tableStrategy</span><span class="pi">:</span>
+          <span class="c1"># 标准分片策略</span>
+          <span class="na">standard</span><span class="pi">:</span>
+            <span class="c1"># 分片键字段名</span>
+            <span class="na">shardingColumn</span><span class="pi">:</span> <span class="s">gid</span>
+            <span class="c1"># 分片算法名称</span>
+            <span class="na">shardingAlgorithmName</span><span class="pi">:</span> <span class="s">link_table_hash_mod</span>
+    <span class="c1"># 分片算法定义</span>
+    <span class="na">shardingAlgorithms</span><span class="pi">:</span>
+      <span class="c1"># 算法名称（与上文对应）</span>
+      <span class="na">link_table_hash_mod</span><span class="pi">:</span>
+        <span class="c1"># 哈希取模算法类型</span>
+        <span class="na">type</span><span class="pi">:</span> <span class="s">HASH_MOD</span>
+        <span class="c1"># 分片总数，对应actualDataNodes的16个分表</span>
+        <span class="na">props</span><span class="pi">:</span>
+          <span class="na">sharding-count</span><span class="pi">:</span> <span class="m">16</span>
+<span class="c1"># 全局属性配置 - 展现逻辑 SQL &amp; 真实 SQL</span>
+<span class="na">props</span><span class="pi">:</span>
+  <span class="na">sql-show</span><span class="pi">:</span> <span class="kc">true</span>
+</code></pre></div></div> <p>根据gid进行分库分表，查询性能 如果使用gid作为分片键,相同gid的所有短链接会存储在同一个分表中。这样在查询某个分组(gid)的所有短链接时,只需要查询对应的那个分表,而不需要扫描所有分表,可以大大提高查询性能。</p> <h2 id="分表之后怎么保证fullshortlink的全局唯一呀">分表之后怎么保证fullShortLink的全局唯一呀？</h2> <p>短链接分表后，虽然设置了短链唯一，但是如果在并发情况下，布隆过滤器也判断该短链不存在，由于分片键是gid，因此有可能出现有短链重复的可能</p> <p>针对这个问题，已做出优化处理，一句话可以概述，在 goto 表为 full_short_url 加唯一索引。视频地址：https://t.zsxq.com/197q2tkZP</p> </body></html>

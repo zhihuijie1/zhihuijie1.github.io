@@ -72,7 +72,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/blog/";
               },
-            },{id: "post-a-post-with-image-galleries",
+            },{id: "post-短链接分库分表",
+      
+        title: "短链接分库分表",
+      
+      description: "",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/blog/2025/%E7%9F%AD%E9%93%BE%E6%8E%A5%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/";
+        
+      },
+    },{id: "post-a-post-with-image-galleries",
       
         title: "a post with image galleries",
       
